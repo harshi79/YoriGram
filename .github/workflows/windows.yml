@@ -39,28 +39,15 @@ on:
       - 'Telegram/configure.sh'
       - 'Telegram/Telegram.plist'
   workflow_dispatch:
-    inputs:
-      build_type:
-        description: 'Build type'
-        required: true
-        default: 'Debug'
-        type: choice
-        options:
-          - Debug
-          - Release
 
 jobs:
   windows-x64:
-    name: Windows x64 (${{ inputs.build_type || 'Debug' }})
+    name: Windows x64 Debug
     runs-on: windows-latest
 
     defaults:
       run:
         shell: cmd
-
-    env:
-      UPLOAD_ARTIFACT: "true"
-      PREPARE_PATH: "Telegram/build/prepare/prepare.py"
 
     steps:
       - name: Prepare directories.
@@ -85,21 +72,11 @@ jobs:
         run: |
           DOCPATH=$TBUILD/$REPO_NAME/docs/building-win.md
           SDK="$(grep "SDK version" $DOCPATH | head -n 1 | sed -r 's/.*\*\*([0-9.]+)\*\* SDK version.*/\\1/')"
-          if [ -z "$SDK" ]; then
-            SDK="10.0.26100.0"
-          fi
+          if [ -z "$SDK" ]; then SDK="10.0.26100.0"; fi
           echo "SDK=$SDK" >> $GITHUB_ENV
-          echo "CACHE_KEY=$(sha256sum $TBUILD/$REPO_NAME/$PREPARE_PATH | awk '{ print $1 }')" >> $GITHUB_ENV
+          echo "CACHE_KEY=$(sha256sum $TBUILD/$REPO_NAME/Telegram/build/prepare/prepare.py | awk '{ print $1 }')" >> $GITHUB_ENV
           git config --global user.email "you@example.com"
           git config --global user.name "GitHub Actions"
-          echo "SDK detected: $SDK"
-          BUILD_TYPE="${{ inputs.build_type || 'Debug' }}"
-          echo "BUILD_TYPE=$BUILD_TYPE" >> $GITHUB_ENV
-          if [ "$BUILD_TYPE" = "Debug" ]; then
-            echo "PREPARE_ARGS=skip-release silent" >> $GITHUB_ENV
-          else
-            echo "PREPARE_ARGS=silent" >> $GITHUB_ENV
-          fi
 
       - name: Native Tools Command Prompt.
         uses: ilammy/msvc-dev-cmd@v1
@@ -118,8 +95,7 @@ jobs:
         with:
           path: ${{ env.TBUILD }}\ThirdParty
           key: ${{ runner.os }}-x64-third-party-${{ env.CACHE_KEY }}
-          restore-keys: |
-            ${{ runner.os }}-x64-third-party-
+          restore-keys: ${{ runner.os }}-x64-third-party-
 
       - name: Libraries cache.
         uses: actions/cache@v4
@@ -130,9 +106,8 @@ jobs:
             !${{ env.LibrariesPath }}\[qQ]t[_\-]*
             ${{ env.LibrariesPath }}\cache_keys\*
             !${{ env.LibrariesPath }}\cache_keys\[qQ]t[_\-]*
-          key: ${{ runner.os }}-x64-libs-${{ env.CACHE_KEY }}-${{ env.BUILD_TYPE }}
+          key: ${{ runner.os }}-x64-libs-debug-${{ env.CACHE_KEY }}
           restore-keys: |
-            ${{ runner.os }}-x64-libs-${{ env.CACHE_KEY }}-
             ${{ runner.os }}-x64-libs-
 
       - name: Qt cache.
@@ -141,14 +116,13 @@ jobs:
           path: |
             ${{ env.LibrariesPath }}\[qQ]t[_\-]*
             ${{ env.LibrariesPath }}\cache_keys\[qQ]t[_\-]*
-          key: ${{ runner.os }}-x64-qt-${{ env.CACHE_KEY }}-${{ env.BUILD_TYPE }}
+          key: ${{ runner.os }}-x64-qt-debug-${{ env.CACHE_KEY }}
           restore-keys: |
-            ${{ runner.os }}-x64-qt-${{ env.CACHE_KEY }}-
             ${{ runner.os }}-x64-qt-
 
       - name: Libraries.
         run: |
-          %TBUILD%\%REPO_NAME%\Telegram\build\prepare\win.bat %PREPARE_ARGS%
+          %TBUILD%\%REPO_NAME%\Telegram\build\prepare\win.bat skip-release silent
 
       - name: Free up some disk space.
         shell: bash
@@ -159,31 +133,20 @@ jobs:
         run: |
           cd %TBUILD%\%REPO_NAME%\Telegram
           call configure.bat x64 -D TDESKTOP_API_ID=${{ secrets.TDESKTOP_API_ID }} -D TDESKTOP_API_HASH=${{ secrets.TDESKTOP_API_HASH }}
-          cmake --build ..\out --config %BUILD_TYPE% --parallel
+          cmake --build ..\out --config Debug --parallel
 
       - name: Move artifact.
         run: |
-          set OUT=%TBUILD%\%REPO_NAME%\out\%BUILD_TYPE%
+          set OUT=%TBUILD%\%REPO_NAME%\out\Debug
           mkdir artifact
           dir %OUT%
-          if exist %OUT%\YoriGram.exe (
-            move %OUT%\YoriGram.exe artifact\
-          ) else (
-            echo YoriGram.exe not found, checking Telegram.exe fallback
-            if exist %OUT%\Telegram.exe move %OUT%\Telegram.exe artifact\YoriGram.exe
-          )
+          if exist %OUT%\YoriGram.exe move %OUT%\YoriGram.exe artifact\
+          if exist %OUT%\Telegram.exe move %OUT%\Telegram.exe artifact\YoriGram.exe
           if exist %OUT%\Updater.exe move %OUT%\Updater.exe artifact\
 
-      - name: Upload artifact.
+      - name: Upload YoriGram.exe
         uses: actions/upload-artifact@v4
         with:
-          name: YoriGram-Desktop-Windows-x64-${{ env.BUILD_TYPE }}
-          path: artifact\
-          if-no-files-found: error
-
-      - name: Upload YoriGram.exe only.
-        uses: actions/upload-artifact@v4
-        with:
-          name: YoriGram.exe-${{ env.BUILD_TYPE }}
+          name: YoriGram.exe
           path: artifact/YoriGram.exe
           if-no-files-found: error
