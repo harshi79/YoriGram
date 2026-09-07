@@ -49,6 +49,9 @@ jobs:
       run:
         shell: cmd
 
+    env:
+      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+
     steps:
       - name: Prepare directories.
         run: |
@@ -71,18 +74,18 @@ jobs:
         shell: bash
         run: |
           DOCPATH=$TBUILD/$REPO_NAME/docs/building-win.md
-          SDK="$(grep "SDK version" $DOCPATH | head -n 1 | sed -r 's/.*\*\*([0-9.]+)\*\* SDK version.*/\\1/')"
-          if [ -z "$SDK" ]; then SDK="10.0.26100.0"; fi
-          echo "SDK=$SDK" >> $GITHUB_ENV
+          SDK_VER=$(grep -oE "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+" "$DOCPATH" | head -n 1)
+          if [ -z "$SDK_VER" ]; then SDK_VER="10.0.26100.0"; fi
+          echo "SDK=$SDK_VER" >> $GITHUB_ENV
           echo "CACHE_KEY=$(sha256sum $TBUILD/$REPO_NAME/Telegram/build/prepare/prepare.py | awk '{ print $1 }')" >> $GITHUB_ENV
           git config --global user.email "you@example.com"
           git config --global user.name "GitHub Actions"
+          echo "SDK detected: $SDK_VER"
 
       - name: Native Tools Command Prompt.
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
-          sdk: ${{ env.SDK }}
           toolset: 14.44
 
       - name: NuGet sources.
