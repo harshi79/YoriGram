@@ -39,10 +39,19 @@ on:
       - 'Telegram/configure.sh'
       - 'Telegram/Telegram.plist'
   workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build type'
+        required: true
+        default: 'Debug'
+        type: choice
+        options:
+          - Debug
+          - Release
 
 jobs:
   windows-x64:
-    name: Windows x64
+    name: Windows x64 (${{ inputs.build_type || 'Debug' }})
     runs-on: windows-latest
 
     defaults:
@@ -75,16 +84,22 @@ jobs:
         shell: bash
         run: |
           DOCPATH=$TBUILD/$REPO_NAME/docs/building-win.md
-          SDK="$(grep "SDK version" $DOCPATH | head -n 1 | sed -r 's/.*\*\*([0-9.]+)\*\* SDK version.*/\1/')"
+          SDK="$(grep "SDK version" $DOCPATH | head -n 1 | sed -r 's/.*\*\*([0-9.]+)\*\* SDK version.*/\\1/')"
           if [ -z "$SDK" ]; then
             SDK="10.0.26100.0"
           fi
           echo "SDK=$SDK" >> $GITHUB_ENV
           echo "CACHE_KEY=$(sha256sum $TBUILD/$REPO_NAME/$PREPARE_PATH | awk '{ print $1 }')" >> $GITHUB_ENV
-          echo "Configurate git for cherry-picks."
           git config --global user.email "you@example.com"
           git config --global user.name "GitHub Actions"
           echo "SDK detected: $SDK"
+          BUILD_TYPE="${{ inputs.build_type || 'Debug' }}"
+          echo "BUILD_TYPE=$BUILD_TYPE" >> $GITHUB_ENV
+          if [ "$BUILD_TYPE" = "Debug" ]; then
+            echo "PREPARE_ARGS=skip-release silent" >> $GITHUB_ENV
+          else
+            echo "PREPARE_ARGS=silent" >> $GITHUB_ENV
+          fi
 
       - name: Native Tools Command Prompt.
         uses: ilammy/msvc-dev-cmd@v1
@@ -115,8 +130,9 @@ jobs:
             !${{ env.LibrariesPath }}\[qQ]t[_\-]*
             ${{ env.LibrariesPath }}\cache_keys\*
             !${{ env.LibrariesPath }}\cache_keys\[qQ]t[_\-]*
-          key: ${{ runner.os }}-x64-libs-${{ env.CACHE_KEY }}
+          key: ${{ runner.os }}-x64-libs-${{ env.CACHE_KEY }}-${{ env.BUILD_TYPE }}
           restore-keys: |
+            ${{ runner.os }}-x64-libs-${{ env.CACHE_KEY }}-
             ${{ runner.os }}-x64-libs-
 
       - name: Qt cache.
@@ -125,13 +141,14 @@ jobs:
           path: |
             ${{ env.LibrariesPath }}\[qQ]t[_\-]*
             ${{ env.LibrariesPath }}\cache_keys\[qQ]t[_\-]*
-          key: ${{ runner.os }}-x64-qt-${{ env.CACHE_KEY }}
+          key: ${{ runner.os }}-x64-qt-${{ env.CACHE_KEY }}-${{ env.BUILD_TYPE }}
           restore-keys: |
+            ${{ runner.os }}-x64-qt-${{ env.CACHE_KEY }}-
             ${{ runner.os }}-x64-qt-
 
       - name: Libraries.
         run: |
-          %TBUILD%\%REPO_NAME%\Telegram\build\prepare\win.bat
+          %TBUILD%\%REPO_NAME%\Telegram\build\prepare\win.bat %PREPARE_ARGS%
 
       - name: Free up some disk space.
         shell: bash
@@ -141,15 +158,12 @@ jobs:
       - name: Telegram Desktop build.
         run: |
           cd %TBUILD%\%REPO_NAME%\Telegram
-          call configure.bat x64 ^
-            -D TDESKTOP_API_ID=${{ secrets.TDESKTOP_API_ID }} ^
-            -D TDESKTOP_API_HASH=${{ secrets.TDESKTOP_API_HASH }}
-          cmake --build ..\out --config Release --parallel
+          call configure.bat x64 -D TDESKTOP_API_ID=${{ secrets.TDESKTOP_API_ID }} -D TDESKTOP_API_HASH=${{ secrets.TDESKTOP_API_HASH }}
+          cmake --build ..\out --config %BUILD_TYPE% --parallel
 
       - name: Move artifact.
-        if: env.UPLOAD_ARTIFACT == 'true'
         run: |
-          set OUT=%TBUILD%\%REPO_NAME%\out\Release
+          set OUT=%TBUILD%\%REPO_NAME%\out\%BUILD_TYPE%
           mkdir artifact
           dir %OUT%
           if exist %OUT%\YoriGram.exe (
@@ -161,17 +175,15 @@ jobs:
           if exist %OUT%\Updater.exe move %OUT%\Updater.exe artifact\
 
       - name: Upload artifact.
-        if: env.UPLOAD_ARTIFACT == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: YoriGram-Desktop-Windows-x64
+          name: YoriGram-Desktop-Windows-x64-${{ env.BUILD_TYPE }}
           path: artifact\
           if-no-files-found: error
 
       - name: Upload YoriGram.exe only.
-        if: env.UPLOAD_ARTIFACT == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: YoriGram.exe
+          name: YoriGram.exe-${{ env.BUILD_TYPE }}
           path: artifact/YoriGram.exe
           if-no-files-found: error
