@@ -1,0 +1,22 @@
+[Desktop Entry]
+Name=YoriGram Desktop
+Comment=Personal-use private desktop Telegram client based on AyuGram Desktop
+TryExec=YoriGram
+Exec=env DESKTOPINTEGRATION=1 YoriGram -- %U
+Icon=com.yorigram.desktop
+Terminal=false
+StartupWMClass=YoriGram
+Type=Application
+Categories=Chat;Network;InstantMessaging;Qt;
+MimeType=x-scheme-handler/tg;x-scheme-handler/tonsite;
+Keywords=tg;chat;im;messaging;messenger;sms;telegram;tdesktop;yorigram;
+Actions=quit;
+DBusActivatable=true
+SingleMainWindow=true
+X-GNOME-UsesNotifications=true
+X-GNOME-SingleWindow=true
+
+[Desktop Action quit]
+Exec=YoriGram -quit
+Name=Quit YoriGram
+Icon=application-exit

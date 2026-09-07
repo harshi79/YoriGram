@@ -1,0 +1,33 @@
+---
+name: 💡 Feature request
+description: Suggest an idea for YoriGram Desktop.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        YoriGram is a personal-use/private rebrand based on AyuGram Desktop. Feature requests should keep AyuGram behavior mostly unchanged unless the change is clearly reviewed and license-compatible.
+  - type: textarea
+    attributes:
+      label: Is your feature request related to a problem?
+      placeholder: A clear and concise description of what the problem is.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Describe the solution you'd like
+      placeholder: A clear and concise description of what you want to happen.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Describe alternatives you've considered
+      placeholder: A clear and concise description of any alternative solutions or features you've considered.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Additional context
+      placeholder: Add any other context or screenshots about the feature request here.
+    validations:
+      required: false

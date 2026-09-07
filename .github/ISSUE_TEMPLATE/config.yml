@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Platform-wide Telegram issue
+    url: https://bugs.telegram.org
+    about: Use only for issues that affect Telegram itself, not YoriGram-only branding or packaging.
+  - name: Upstream AyuGram issue
+    url: https://github.com/AyuGram/AyuGramDesktop/issues
+    about: Use only for confirmed upstream AyuGram Desktop bugs, not private YoriGram-only changes.

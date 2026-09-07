@@ -1,0 +1,64 @@
+name: Bug report
+description: Report errors or unexpected behavior in YoriGram Desktop.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting issues with YoriGram Desktop.
+
+        YoriGram is a personal-use/private rebrand based on AyuGram Desktop and Telegram Desktop. Please do not report private YoriGram-only packaging issues to upstream AyuGram or Telegram unless they are confirmed upstream bugs.
+  - type: textarea
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Expected behaviour
+      placeholder: Tell us what should happen
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Actual behaviour
+      placeholder: Tell us what happens instead
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Operating system
+      description: Your operating system name, version, and desktop environment.
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Version of YoriGram Desktop
+      description: Specify the actual version/build you tested.
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: Installation source
+      multiple: false
+      options:
+        - Private/local Windows build
+        - Private/local Linux build
+        - Private/local macOS build
+        - Other private source
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Crash ID
+      description: If you're reporting a crash, enter the crash ID from the crash reporter shown on the next launch after the crash.
+  - type: textarea
+    attributes:
+      label: Logs
+      description: You can find log.txt using the `viewlogs` cheat code.
+      placeholder: Insert log.txt here if necessary.
+      render: shell
