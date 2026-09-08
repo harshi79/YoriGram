@@ -44,12 +44,42 @@ rpl::producer<TextWithEntities> Text() {
 		lt_gpl_link,
 		rpl::single(Ui::Text::Link(
 			"GNU GPL",
-			"https://github.com/harshi79/YoriGram/blob/arena/01a07c24-yorigram/LICENSE")),
+			"https://github.com/harshi79/YoriGram/blob/main/LICENSE")),
 		lt_github_link,
 		rpl::single(Ui::Text::Link(
 			"GitHub",
 			"https://github.com/harshi79/YoriGram")),
 		tr::marked);
+}
+
+rpl::producer<TextWithEntities> YoriGramInfoText() {
+	return rpl::single(
+		Ui::Text::WithEntities(
+			u"YoriGram Channel: https://t.me/+y8EekRvqpnQzNjZl\n"
+			u"Owner: @Yorichiiprime\n\n"
+			u"Based on AyuGram Desktop & Telegram Desktop (GPLv3). "
+			u"Full credits on GitHub."_q
+		).append(
+			Ui::Text::Link(
+				u"Channel"_q,
+				"https://t.me/+y8EekRvqpnQzNjZl"
+			)
+		)
+	);
+}
+
+rpl::producer<TextWithEntities> ChannelText() {
+	auto text = TextWithEntities();
+	text.text = u"📢 YoriGram Channel: "_q;
+	text.entities.push_back(
+		EntityInText(
+			EntityType::CustomUrl,
+			20,
+			25,
+			"https://t.me/+y8EekRvqpnQzNjZl"
+		)
+	);
+	return rpl::single(text);
 }
 
 } // namespace
@@ -89,6 +119,30 @@ void AboutBox(not_null<Ui::GenericBox*> box, Window::SessionController* controll
 
 	addText(Text());
 
+	{
+		auto channelText = TextWithEntities();
+		channelText.text = u"📢 Channel: https://t.me/+y8EekRvqpnQzNjZl\n"
+			u"👑 Owner: @Yorichiiprime\n"
+			u"Based on AyuGram & Telegram Desktop (GPLv3)"_q;
+		channelText.entities.push_back(
+			EntityInText(
+				EntityType::CustomUrl,
+				11,
+				25,
+				"https://t.me/+y8EekRvqpnQzNjZl"
+			)
+		);
+		channelText.entities.push_back(
+			EntityInText(
+				EntityType::CustomUrl,
+				45,
+				14,
+				"https://t.me/Yorichiiprime"
+			)
+		);
+		addText(rpl::single(channelText));
+	}
+
 	box->addButton(tr::lng_close(), [=] { box->closeBox(); });
 	box->addLeftButton(
 		rpl::single(QString("YoriGram Source")),
@@ -96,6 +150,13 @@ void AboutBox(not_null<Ui::GenericBox*> box, Window::SessionController* controll
 		{
 			box->closeBox();
 			File::OpenUrl("https://github.com/harshi79/YoriGram");
+		});
+	box->addLeftButton(
+		rpl::single(QString("Channel")),
+		[box]
+		{
+			box->closeBox();
+			File::OpenUrl("https://t.me/+y8EekRvqpnQzNjZl");
 		});
 
 	box->setWidth(st::aboutWidth);
