@@ -44,15 +44,24 @@ jobs:
   windows-x64:
     name: Windows x64 Debug
     runs-on: windows-latest
-
     defaults:
       run:
         shell: cmd
-
     env:
       ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
-
     steps:
+      - name: Free up disk space - start
+        shell: pwsh
+        run: |
+          Get-PSDrive C | Select-Object Used,Free
+          Remove-Item -Path "C:\Android" -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item -Path "C:\hostedtoolcache\windows\stack" -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item -Path "C:\hostedtoolcache\windows\CodeQL" -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item -Path "C:\hostedtoolcache\windows\go" -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item -Path "C:\hostedtoolcache\windows\Ruby" -Recurse -Force -ErrorAction SilentlyContinue
+          npm cache clean --force 2>$null; $true
+          Get-PSDrive C | Select-Object Used,Free
+
       - name: Prepare directories.
         run: |
           mkdir %userprofile%\TBuild\Libraries
@@ -80,7 +89,6 @@ jobs:
           echo "CACHE_KEY=$(sha256sum $TBUILD/$REPO_NAME/Telegram/build/prepare/prepare.py | awk '{ print $1 }')" >> $GITHUB_ENV
           git config --global user.email "you@example.com"
           git config --global user.name "GitHub Actions"
-          echo "SDK detected: $SDK_VER"
 
       - name: Native Tools Command Prompt.
         uses: ilammy/msvc-dev-cmd@v1
@@ -110,8 +118,7 @@ jobs:
             ${{ env.LibrariesPath }}\cache_keys\*
             !${{ env.LibrariesPath }}\cache_keys\[qQ]t[_\-]*
           key: ${{ runner.os }}-x64-libs-debug-${{ env.CACHE_KEY }}
-          restore-keys: |
-            ${{ runner.os }}-x64-libs-
+          restore-keys: ${{ runner.os }}-x64-libs-
 
       - name: Qt cache.
         uses: actions/cache@v4
@@ -120,17 +127,18 @@ jobs:
             ${{ env.LibrariesPath }}\[qQ]t[_\-]*
             ${{ env.LibrariesPath }}\cache_keys\[qQ]t[_\-]*
           key: ${{ runner.os }}-x64-qt-debug-${{ env.CACHE_KEY }}
-          restore-keys: |
-            ${{ runner.os }}-x64-qt-
+          restore-keys: ${{ runner.os }}-x64-qt-
 
       - name: Libraries.
         run: |
           %TBUILD%\%REPO_NAME%\Telegram\build\prepare\win.bat skip-release silent
 
-      - name: Free up some disk space.
+      - name: Free up some disk space - before build
         shell: bash
         run: |
+          df -h
           find $LibrariesPath '(' '(' ! '(' -name '*.lib' -o -name '*.a' -o -name '*.exe' -o -name '*.h' -o -name '*.hpp' -o -name '*.inc' -o -name '*.cmake' -o -name '*.pc' -o -path '*/include/*' -o -path '*/objects-*' -o -path '*/cache_keys/*' -o -path '*/patches/*' -o -path '*/nv-codec-headers/*' ')' -type f ')' -o -empty ')' -delete || true
+          df -h
 
       - name: Telegram Desktop build.
         run: |
